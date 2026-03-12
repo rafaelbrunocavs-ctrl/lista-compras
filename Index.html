@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🛒 Lista de Compras</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --card: #FFFFFF;
+    --primary: #FF6B6B;
+    --secondary: #4ECDC4;
+    --gael: #FFB347;
+    --gael-light: #FFF3E0;
+    --hist: #8B5CF6;
+    --hist-light: #F5F0FF;
+    --text: #2D3436;
+    --muted: #999;
+    --border: #F0E6DC;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+  .header { background: linear-gradient(135deg, var(--primary) 0%, #FF8E53 100%); padding: 24px 20px 32px; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; top: -80px; right: -60px; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-family: 'Fredoka One', cursive; color: white; font-size: 26px; }
+  .header-date { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .total-badge { background: rgba(255,255,255,0.25); color: white; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+
+  .tabs { display: flex; background: white; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .tab { flex: 1; padding: 11px 4px; text-align: center; font-weight: 700; font-size: 11px; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; user-select: none; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab .tab-icon { font-size: 17px; display: block; margin-bottom: 2px; }
+
+  .content { padding: 16px; }
+
+  .add-section { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow); border: 2px solid transparent; transition: border-color 0.2s; }
+  .add-section:focus-within { border-color: var(--secondary); }
+  .add-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .add-input { flex: 1; padding: 12px 16px; border: 2px solid var(--border); border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 600; outline: none; transition: border-color 0.2s; background: var(--bg); }
+  .add-input:focus { border-color: var(--secondary); }
+  .add-btn { width: 48px; height: 48px; background: var(--secondary); border: none; border-radius: 12px; color: white; font-size: 24px; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .add-btn:active { transform: scale(0.92); }
+  .add-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cat-select, .qty-input, .note-input { padding: 8px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600; background: var(--bg); outline: none; transition: border-color 0.2s; }
+  .cat-select:focus, .qty-input:focus, .note-input:focus { border-color: var(--secondary); }
+  .cat-select { flex: 1; min-width: 120px; }
+  .qty-input { width: 65px; }
+  .note-input { flex: 2; min-width: 140px; }
+
+  .cat-section { margin-bottom: 16px; }
+  .cat-header { display: flex; align-items: center; gap: 8px; padding: 8px 4px; cursor: pointer; user-select: none; }
+  .cat-emoji { font-size: 20px; }
+  .cat-name { font-weight: 800; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; flex: 1; }
+  .cat-count { background: var(--border); color: var(--muted); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+  .item-card { background: var(--card); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.25s; cursor: pointer; border: 2px solid transparent; }
+  .item-card:active { transform: scale(0.98); }
+  .item-card.done { opacity: 0.55; background: #F8F8F8; }
+  .item-card.done .item-name { text-decoration: line-through; color: var(--muted); }
+  .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 14px; }
+  .item-card.done .check-circle { background: var(--secondary); border-color: var(--secondary); color: white; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { display: flex; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+  .item-qty { background: var(--border); color: var(--text); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .item-note { color: var(--muted); font-size: 12px; font-weight: 600; font-style: italic; }
+  .item-del-btn { width: 30px; height: 30px; border: none; background: #FFE8E8; color: var(--primary); border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .item-del-btn:active { background: var(--primary); color: white; }
+
+  .progress-wrap { background: white; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  .progress-bar { height: 10px; background: var(--border); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), #45B7AA); border-radius: 10px; transition: width 0.4s ease; }
+
+  .gael-card { background: var(--gael-light); border: 2px solid var(--gael); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .gael-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .gael-title { font-family: 'Fredoka One', cursive; font-size: 20px; color: #E67E22; }
+  .gael-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .gael-add-btn { width: 44px; height: 44px; background: var(--gael); border: none; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.1s; }
+  .gael-add-btn:active { transform: scale(0.92); }
+  .gael-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1.5px solid rgba(255,179,71,0.3); cursor: pointer; transition: all 0.2s; }
+  .gael-item.done { opacity: 0.55; }
+  .gael-item.done .gael-item-name { text-decoration: line-through; color: var(--muted); }
+  .gael-check { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--gael); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; transition: all 0.2s; }
+  .gael-item.done .gael-check { background: var(--gael); border-color: var(--gael); color: white; }
+  .gael-item-name { font-weight: 700; font-size: 14px; flex: 1; }
+  .gael-del { background: none; border: none; color: var(--gael); cursor: pointer; font-size: 16px; padding: 4px; }
+
+  .save-current-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--secondary) 0%, #45B7AA 100%); color: white; border: none; border-radius: var(--radius); font-family: 'Fredoka One', cursive; font-size: 18px; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(78,205,196,0.4); transition: all 0.2s; }
+  .save-current-btn:active { transform: scale(0.98); }
+  .saved-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); border: 2px solid var(--border); }
+  .saved-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
+  .saved-card-name { font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--text); }
+  .saved-card-count { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .saved-items-preview { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .saved-item-chip { background: var(--bg); border: 1.5px solid var(--border); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--text); }
+  .saved-actions { display: flex; gap: 8px; }
+  .btn-load { flex: 1; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 12px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+  .btn-load:active { transform: scale(0.97); }
+  .btn-del-list { width: 42px; background: #FFE8E8; color: var(--primary); border: none; border-radius: 12px; font-size: 18px; cursor: pointer; }
+
+  /* HISTÓRICO */
+  .section-label { font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .hist-month-selector { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 6px; }
+  .hist-month-selector::-webkit-scrollbar { height: 4px; }
+  .hist-month-selector::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .month-chip { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: 2px solid var(--border); background: white; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .month-chip.active { background: var(--hist); border-color: var(--hist); color: white; }
+
+  .compare-bar { background: var(--hist-light); border: 2px solid var(--hist); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
+  .compare-title { font-family: 'Fredoka One', cursive; font-size: 16px; color: var(--hist); margin-bottom: 12px; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .compare-stat { background: white; border-radius: 12px; padding: 12px; text-align: center; }
+  .compare-stat-num { font-family: 'Fredoka One', cursive; font-size: 28px; }
+  .compare-stat-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+  .stat-green { color: #27AE60; }
+  .stat-red { color: var(--primary); }
+  .stat-purple { color: var(--hist); }
+  .stat-blue { color: var(--secondary); }
+
+  .insight-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 4px solid var(--hist); }
+  .insight-card.recurring { border-left-color: var(--secondary); }
+  .insight-card.missing { border-left-color: var(--primary); }
+  .insight-card.new-item { border-left-color: var(--gael); }
+  .insight-title { font-weight: 800; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .insight-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .insight-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .chip-recurring { background: #E8FAF8; color: #27AE80; }
+  .chip-missing { background: #FFE8E8; color: var(--primary); }
+  .chip-new { background: #FFF3E0; color: #E67E22; }
+  .chip-stock { background: var(--hist-light); color: var(--hist); }
+  .add-to-list-btn { margin-top: 10px; padding: 8px 16px; background: var(--hist); color: white; border: none; border-radius: 10px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .add-to-list-btn:active { opacity: 0.85; }
+
+  .hist-month-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-top: 16px; }
+  .hist-month-title { font-family: 'Fredoka One', cursive; font-size: 20px; margin-bottom: 2px; }
+  .hist-month-sub { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  .hist-item-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+  .hist-item-row:last-child { border-bottom: none; }
+  .hist-item-name { flex: 1; font-weight: 700; font-size: 14px; }
+  .hist-item-qty { font-size: 12px; font-weight: 700; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 8px; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 50px; margin-bottom: 10px; }
+  .empty-text { font-weight: 700; font-size: 16px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: white; border-radius: 24px 24px 0 0; padding: 24px 20px; width: 100%; max-width: 480px; transform: translateY(40px); transition: transform 0.25s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-family: 'Fredoka One', cursive; font-size: 20px; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
+  .modal input, .modal select { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 14px; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; outline: none; margin-bottom: 12px; background: var(--bg); }
+  .modal input:focus, .modal select:focus { border-color: var(--primary); }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-save-btn { flex: 1; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px; cursor: pointer; }
+  .modal-cancel-btn { flex: 1; padding: 14px; background: var(--border); color: var(--text); border: none; border-radius: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px; cursor: pointer; }
+
+  .clear-done-btn { width: 100%; padding: 12px; background: transparent; border: 2px solid var(--border); border-radius: 14px; color: var(--muted); font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 8px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .item-card, .gael-item { animation: slideIn 0.2s ease; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🛒 Lista de Compras</h1>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+    <div class="total-badge" id="totalBadge">0 itens</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('lista')"><span class="tab-icon">🛍️</span>Lista</div>
+  <div class="tab" onclick="switchTab('gael')"><span class="tab-icon">👶</span>Gael</div>
+  <div class="tab" onclick="switchTab('salvas')"><span class="tab-icon">⭐</span>Salvas</div>
+  <div class="tab" onclick="switchTab('historico')"><span class="tab-icon">📊</span>Histórico</div>
+</div>
+
+<!-- LISTA -->
+<div class="page active" id="page-lista">
+  <div class="content">
+    <div class="add-section">
+      <div class="add-row">
+        <input class="add-input" id="itemInput" placeholder="Adicionar item..." onkeydown="if(event.key==='Enter') addItem()">
+        <button class="add-btn" onclick="addItem()">+</button>
+      </div>
+      <div class="add-options">
+        <select class="cat-select" id="catSelect">
+          <option value="Frutas e Verduras">🥦 Frutas e Verduras</option>
+          <option value="Laticínios">🥛 Laticínios</option>
+          <option value="Carnes e Frios">🥩 Carnes e Frios</option>
+          <option value="Padaria">🍞 Padaria</option>
+          <option value="Mercearia">🥫 Mercearia</option>
+          <option value="Limpeza">🧹 Limpeza</option>
+          <option value="Higiene">🧴 Higiene</option>
+          <option value="Bebidas">🥤 Bebidas</option>
+          <option value="Outros">📦 Outros</option>
+        </select>
+        <input class="qty-input" id="qtyInput" placeholder="Qtd." type="text">
+        <input class="note-input" id="noteInput" placeholder="Obs..." type="text" onkeydown="if(event.key==='Enter') addItem()">
+      </div>
+    </div>
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-label">
+        <span>Progresso das compras</span>
+        <span id="progressText">0 de 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div id="listContainer"></div>
+    <button class="clear-done-btn" id="clearDoneBtn" style="display:none" onclick="clearDone()">🗑️ Remover itens já comprados</button>
+  </div>
+</div>
+
+<!-- GAEL -->
+<div class="page" id="page-gael">
+  <div class="content">
+    <div class="gael-card">
+      <div class="gael-header">
+        <span style="font-size:28px">👶</span>
+        <div>
+          <div class="gael-title">Coisas do Gael</div>
+          <div style="font-size:13px; color:#E67E22; font-weight:600">Lista especial do neném 🥰</div>
+        </div>
+      </div>
+      <div class="gael-add-row">
+        <input class="add-input" id="gaelInput" placeholder="Adicionar item do Gael..." onkeydown="if(event.key==='Enter') addGaelItem()">
+        <button class="gael-add-btn" onclick="addGaelItem()">+</button>
+      </div>
+      <div id="gaelList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SALVAS -->
+<div class="page" id="page-salvas">
+  <div class="content">
+    <button class="save-current-btn" onclick="openSaveModal()">📊 Salvar lista atual no histórico</button>
+    <div id="savedListsContainer"></div>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div class="page" id="page-historico">
+  <div class="content">
+    <div class="section-label">📅 Selecione o mês</div>
+    <div class="hist-month-selector" id="monthSelector"></div>
+    <div id="histCompare"></div>
+    <div id="histInsights"></div>
+    <div id="histMonthView"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h3>📊 Salvar no Histórico</h3>
+    <p class="modal-sub">A lista atual vira o registro de compras do mês</p>
+    <input type="text" id="listNameInput" placeholder="Nome (ex: Março 2026)">
+    <select id="listMonthSelect"></select>
+    <div class="modal-btns">
+      <button class="modal-cancel-btn" onclick="closeModal()">Cancelar</button>
+      <button class="modal-save-btn" onclick="saveCurrentList()">Salvar 📊</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = {'Frutas e Verduras':'🥦','Laticínios':'🥛','Carnes e Frios':'🥩','Padaria':'🍞','Mercearia':'🥫','Limpeza':'🧹','Higiene':'🧴','Bebidas':'🥤','Outros':'📦'};
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let items = JSON.parse(localStorage.getItem('shopItems') || '[]');
+let gaelItems = JSON.parse(localStorage.getItem('gaelItems') || '[]');
+let savedLists = JSON.parse(localStorage.getItem('savedLists') || '[]');
+let collapsedCats = {};
+let selectedMonthKey = null;
+
+function save() {
+  localStorage.setItem('shopItems', JSON.stringify(items));
+  localStorage.setItem('gaelItems', JSON.stringify(gaelItems));
+  localStorage.setItem('savedLists', JSON.stringify(savedLists));
+}
+
+function mkKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function keyLabel(k) { const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; }
+function norm(s) { return (s||'').toLowerCase().trim(); }
+
+/* ── LISTA ── */
+function addItem() {
+  const name = document.getElementById('itemInput').value.trim();
+  if (!name) return;
+  items.push({ id: Date.now(), name, cat: document.getElementById('catSelect').value, qty: document.getElementById('qtyInput').value.trim(), note: document.getElementById('noteInput').value.trim(), done: false });
+  document.getElementById('itemInput').value = '';
+  document.getElementById('qtyInput').value = '';
+  document.getElementById('noteInput').value = '';
+  save(); renderList(); document.getElementById('itemInput').focus();
+}
+function toggleItem(id) { const i=items.find(x=>x.id===id); if(i){i.done=!i.done; save(); renderList();} }
+function deleteItem(id) { items=items.filter(i=>i.id!==id); save(); renderList(); }
+function clearDone() { items=items.filter(i=>!i.done); save(); renderList(); }
+function toggleCat(cat) { collapsedCats[cat]=!collapsedCats[cat]; renderList(); }
+
+function renderList() {
+  const byCat={};
+  items.forEach(item=>{ if(!byCat[item.cat]) byCat[item.cat]=[]; byCat[item.cat].push(item); });
+  const total=items.length, done=items.filter(i=>i.done).length, pending=total-done;
+  document.getElementById('totalBadge').textContent = pending+(pending===1?' item':' itens');
+  const pw=document.getElementById('progressWrap');
+  if(total>0){ pw.style.display='block'; document.getElementById('progressText').textContent=done+' de '+total+' comprados'; document.getElementById('progressFill').style.width=(done/total*100)+'%'; } else pw.style.display='none';
+  document.getElementById('clearDoneBtn').style.display=done>0?'block':'none';
+  const container=document.getElementById('listContainer');
+  if(!Object.keys(byCat).length){ container.innerHTML='<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">Nenhum item na lista</div><div style="font-size:13px;margin-top:6px">Adicione algo acima!</div></div>'; return; }
+  let html='';
+  Object.keys(CATS).forEach(cat=>{
+    if(!byCat[cat]) return;
+    const ci=byCat[cat], col=collapsedCats[cat], cd=ci.filter(i=>i.done).length;
+    html+=`<div class="cat-section"><div class="cat-header" onclick="toggleCat('${cat}')"><span class="cat-emoji">${CATS[cat]}</span><span class="cat-name">${cat}</span><span class="cat-count">${cd}/${ci.length}</span><span style="font-size:12px;color:var(--muted)">${col?'▶':'▼'}</span></div>`;
+    if(!col) ci.forEach(item=>{
+      html+=`<div class="item-card ${item.done?'done':''}" onclick="toggleItem(${item.id})"><div class="check-circle">${item.done?'✓':''}</div><div class="item-info"><div class="item-name">${item.name}</div><div class="item-meta">${item.qty?`<span class="item-qty">📌 ${item.qty}</span>`:''} ${item.note?`<span class="item-note">💬 ${item.note}</span>`:''}</div></div><button class="item-del-btn" onclick="event.stopPropagation();deleteItem(${item.id})">🗑</button></div>`;
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+/* ── GAEL ── */
+function addGaelItem() {
+  const name=document.getElementById('gaelInput').value.trim();
+  if(!name) return;
+  gaelItems.push({id:Date.now(),name,done:false});
+  document.getElementById('gaelInput').value='';
+  save(); renderGael();
+}
+function toggleGaelItem(id){const i=gaelItems.find(x=>x.id===id);if(i){i.done=!i.done;save();renderGael();}}
+function deleteGaelItem(id){gaelItems=gaelItems.filter(i=>i.id!==id);save();renderGael();}
+function renderGael() {
+  const c=document.getElementById('gaelList');
+  if(!gaelItems.length){c.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🍼</div><div class="empty-text">Nenhum item do Gael</div></div>';return;}
+  c.innerHTML=gaelItems.map(i=>`<div class="gael-item ${i.done?'done':''}" onclick="toggleGaelItem(${i.id})"><div class="gael-check">${i.done?'✓':''}</div><span class="gael-item-name">${i.name}</span><button class="gael-del" onclick="event.stopPropagation();deleteGaelItem(${i.id})">✕</button></div>`).join('');
+}
+
+/* ── SAVE / LOAD ── */
+function populateMonthSelect() {
+  const sel=document.getElementById('listMonthSelect');
+  const now=new Date();
+  sel.innerHTML='<option value="">-- Mês de referência --</option>';
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const k=mkKey(d);
+    sel.innerHTML+=`<option value="${k}" ${i===0?'selected':''}>${keyLabel(k)}</option>`;
+  }
+}
+function openSaveModal() {
+  if(!items.length){alert('Sua lista está vazia!');return;}
+  populateMonthSelect();
+  document.getElementById('listNameInput').value='Compras de '+keyLabel(mkKey(new Date()));
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('listNameInput').focus(),200);
+}
+function closeModal(e) { if(!e||e.target===document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open'); }
+function saveCurrentList() {
+  const name=document.getElementById('listNameInput').value.trim()||'Lista '+new Date().toLocaleDateString('pt-BR');
+  const monthKey=document.getElementById('listMonthSelect').value||mkKey(new Date());
+  const entry={id:Date.now(),name,monthKey,items:items.map(i=>({...i})),date:new Date().toLocaleDateString('pt-BR')};
+  const idx=savedLists.findIndex(l=>l.monthKey===monthKey);
+  if(idx>=0){if(!confirm('Já existe uma lista para '+keyLabel(monthKey)+'. Substituir?'))return; savedLists[idx]=entry;}
+  else savedLists.unshift(entry);
+  save(); renderSaved(); renderHistorico(); closeModal();
+}
+function loadList(id) {
+  const list=savedLists.find(l=>l.id===id);
+  if(!list)return;
+  if(confirm('Isso vai substituir a lista atual. Continuar?')){
+    items=list.items.map(i=>({...i,id:Date.now()+Math.random(),done:false}));
+    save(); renderList(); switchTab('lista');
+  }
+}
+function deleteSaved(id){savedLists=savedLists.filter(l=>l.id!==id);save();renderSaved();renderHistorico();}
+function renderSaved() {
+  const c=document.getElementById('savedListsContainer');
+  if(!savedLists.length){c.innerHTML='<div class="empty"><div class="empty-icon">⭐</div><div class="empty-text">Nenhuma lista salva</div><div style="font-size:13px;margin-top:6px">Salve sua lista atual para criar um histórico!</div></div>';return;}
+  const sorted=[...savedLists].sort((a,b)=>b.monthKey.localeCompare(a.monthKey));
+  c.innerHTML=sorted.map(list=>`<div class="saved-card">
+    <div class="saved-card-header"><div><div class="saved-card-name">${list.name}</div><div class="saved-card-count">${keyLabel(list.monthKey)}</div></div><div class="saved-card-count">${list.items.length} itens</div></div>
+    <div class="saved-items-preview">${list.items.slice(0,6).map(i=>`<span class="saved-item-chip">${i.name}</span>`).join('')}${list.items.length>6?`<span class="saved-item-chip">+${list.items.length-6}</span>`:''}</div>
+    <div class="saved-actions"><button class="btn-load" onclick="loadList(${list.id})">📋 Usar como base</button><button class="btn-del-list" onclick="deleteSaved(${list.id})">🗑</button></div>
+  </div>`).join('');
+}
+
+/* ── HISTÓRICO ── */
+function renderHistorico() {
+  const sorted=[...savedLists].sort((a,b)=>b.monthKey.localeCompare(a.monthKey));
+  const ms=document.getElementById('monthSelector');
+  if(!sorted.length){
+    ms.innerHTML='';
+    document.getElementById('histCompare').innerHTML='';
+    document.getElementById('histInsights').innerHTML='';
+    document.getElementById('histMonthView').innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Nenhum histórico ainda</div><div style="font-size:13px;margin-top:6px">Salve sua lista mensal na aba Salvas!</div></div>';
+    return;
+  }
+  if(!selectedMonthKey||!sorted.find(l=>l.monthKey===selectedMonthKey)) selectedMonthKey=sorted[0].monthKey;
+  ms.innerHTML=sorted.map(l=>`<button class="month-chip ${l.monthKey===selectedMonthKey?'active':''}" onclick="selectMonth('${l.monthKey}')">${keyLabel(l.monthKey)}</button>`).join('');
+  const cur=sorted.find(l=>l.monthKey===selectedMonthKey);
+  const curIdx=sorted.indexOf(cur);
+  const prev=curIdx+1<sorted.length?sorted[curIdx+1]:null;
+  renderCompare(cur,prev);
+  renderInsights(cur,prev,sorted);
+  renderMonthDetail(cur);
+}
+
+function selectMonth(k){selectedMonthKey=k;renderHistorico();}
+
+function renderCompare(cur,prev) {
+  const el=document.getElementById('histCompare');
+  if(!prev){el.innerHTML=`<div class="compare-bar" style="text-align:center;padding:20px"><div style="font-size:32px">📊</div><div style="font-weight:700;color:var(--hist);margin-top:8px">Salve mais um mês para ver a comparação!</div></div>`;return;}
+  const cN=new Set(cur.items.map(i=>norm(i.name)));
+  const pN=new Set(prev.items.map(i=>norm(i.name)));
+  const inBoth=[...cN].filter(n=>pN.has(n)).length;
+  const onlyPrev=[...pN].filter(n=>!cN.has(n)).length;
+  const diff=cur.items.length-prev.items.length;
+  el.innerHTML=`<div class="compare-bar">
+    <div class="compare-title">📊 ${keyLabel(cur.monthKey)} vs ${keyLabel(prev.monthKey)}</div>
+    <div class="compare-grid">
+      <div class="compare-stat"><div class="compare-stat-num stat-purple">${cur.items.length}</div><div class="compare-stat-label">Itens este mês</div></div>
+      <div class="compare-stat"><div class="compare-stat-num stat-blue">${prev.items.length}</div><div class="compare-stat-label">Mês anterior</div></div>
+      <div class="compare-stat"><div class="compare-stat-num stat-green">${inBoth}</div><div class="compare-stat-label">Em ambos os meses</div></div>
+      <div class="compare-stat"><div class="compare-stat-num stat-red">${onlyPrev}</div><div class="compare-stat-label">Faltaram este mês</div></div>
+    </div>
+  </div>`;
+}
+
+function renderInsights(cur,prev,all) {
+  const el=document.getElementById('histInsights');
+  let html='';
+
+  // Recorrentes: em 2+ meses (ou todos se só 2)
+  const freq={};
+  all.forEach(list=>list.items.forEach(i=>{const k=norm(i.name);if(!freq[k])freq[k]={name:i.name,cat:i.cat,count:0};freq[k].count++;}));
+  const minRec=all.length>=3?3:2;
+  const recurring=Object.values(freq).filter(f=>f.count>=minRec).sort((a,b)=>b.count-a.count);
+  if(recurring.length){
+    html+=`<div class="insight-card recurring">
+      <div class="insight-title">🔁 Compram sempre (${recurring.length} itens recorrentes)</div>
+      <div class="insight-chips">${recurring.slice(0,12).map(r=>`<span class="insight-chip chip-recurring">${r.name} <small style="opacity:.7">${r.count}x</small></span>`).join('')}</div>
+    </div>`;
+  }
+
+  // Faltaram: estavam no mês anterior, não neste
+  if(prev){
+    const cN=new Set(cur.items.map(i=>norm(i.name)));
+    const missing=prev.items.filter(i=>!cN.has(norm(i.name)));
+    if(missing.length){
+      const ids=JSON.stringify(missing.map(i=>({name:i.name,cat:i.cat||'Outros',qty:i.qty||''})));
+      html+=`<div class="insight-card missing">
+        <div class="insight-title">⚠️ Faltaram este mês (estavam em ${keyLabel(prev.monthKey)})</div>
+        <div class="insight-chips">${missing.map(i=>`<span class="insight-chip chip-missing">${i.name}</span>`).join('')}</div>
+        <button class="add-to-list-btn" onclick='addItemsToList(${ids.replace(/'/g,"&#39;")})'>+ Adicionar à lista atual</button>
+      </div>`;
+    }
+  }
+
+  // Sugestão de estoque: frequentes, não na lista atual agora
+  const curNames=new Set(items.map(i=>norm(i.name)));
+  const stock=Object.values(freq).filter(f=>f.count>=2&&!curNames.has(norm(f.name))).sort((a,b)=>b.count-a.count).slice(0,10);
+  if(stock.length){
+    const ids=JSON.stringify(stock.map(i=>({name:i.name,cat:i.cat||'Outros',qty:''})));
+    html+=`<div class="insight-card">
+      <div class="insight-title">📦 Sugestão de estoque (compram com frequência)</div>
+      <div class="insight-chips">${stock.map(f=>`<span class="insight-chip chip-stock">${f.name} <small style="opacity:.7">${f.count}x</small></span>`).join('')}</div>
+      <button class="add-to-list-btn" onclick='addItemsToList(${ids.replace(/'/g,"&#39;")})'>+ Adicionar à lista atual</button>
+    </div>`;
+  }
+
+  // Novidades: só neste mês, nunca antes
+  if(all.length>1){
+    const prevAllNames=new Set(all.filter(l=>l.monthKey!==cur.monthKey).flatMap(l=>l.items.map(i=>norm(i.name))));
+    const newIt=cur.items.filter(i=>!prevAllNames.has(norm(i.name)));
+    if(newIt.length){
+      html+=`<div class="insight-card new-item">
+        <div class="insight-title">✨ Novidades este mês (1ª vez)</div>
+        <div class="insight-chips">${newIt.map(i=>`<span class="insight-chip chip-new">${i.name}</span>`).join('')}</div>
+      </div>`;
+    }
+  }
+
+  el.innerHTML=html;
+}
+
+function addItemsToList(arr) {
+  let added=0;
+  arr.forEach(item=>{
+    if(!items.some(i=>norm(i.name)===norm(item.name))){
+      items.push({id:Date.now()+Math.random(),name:item.name,cat:item.cat||'Outros',qty:item.qty||'',note:'',done:false});
+      added++;
+    }
+  });
+  save(); renderList();
+  alert(added>0?`✅ ${added} item(ns) adicionado(s) à lista!`:'Todos os itens já estavam na lista.');
+}
+
+function renderMonthDetail(cur) {
+  const el=document.getElementById('histMonthView');
+  if(!cur){el.innerHTML='';return;}
+  const byCat={};
+  cur.items.forEach(i=>{if(!byCat[i.cat])byCat[i.cat]=[];byCat[i.cat].push(i);});
+  let html=`<div class="hist-month-card"><div class="hist-month-title">${cur.name}</div><div class="hist-month-sub">Salvo em ${cur.date} · ${cur.items.length} itens</div>`;
+  Object.keys(CATS).forEach(cat=>{
+    if(!byCat[cat])return;
+    html+=`<div style="margin-top:14px"><div style="font-weight:800;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${CATS[cat]} ${cat}</div>`;
+    byCat[cat].forEach(i=>{html+=`<div class="hist-item-row"><span class="hist-item-name">${i.name}</span>${i.qty?`<span class="hist-item-qty">${i.qty}</span>`:''}</div>`;});
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['lista','gael','salvas','historico'][i]===tab);});
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='historico') renderHistorico();
+}
+
+const d=new Date();
+document.getElementById('headerDate').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+renderList(); renderGael(); renderSaved();
+</script>
+</body>
+</html>
